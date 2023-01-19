@@ -13,27 +13,38 @@
   </head>
   <body>
     <div class="container">
-      <h1 class="mt-2">Web Sockets Client</h1>
-      <hr />
-      <p>
-        Server Sockets Status:
-        <span id="lbl-online" class="text-success">Connect</span>
-        <span id="lbl-offline" class="text-danger">Disconnect</span>
-      </p>
+      <h1 class="mt-2">Main room sockect chat</h1>
     </div>
 
-    <div class="container">
-      <div class="row">
-        <div class="col">
-          <input type="text" id="inputTxtMsm" class="form-control" />
-        </div>
-        <div class="col">
-          <button class="btn btn-primary" id="btnSendMsm" type="submit">
-            Enviar
-          </button>
+    <form action="chat.html">
+      <div class="row ms-3">
+        <div class="col-3">
+          <div class="mb-3">
+            <label for="exampleFormControlInput1" class="form-label"
+              >name</label
+            >
+            <input
+              type="text"
+              class="form-control"
+              placeholder="name"
+              name="name"
+            />
+          </div>
+          <div class="mb-3">
+            <label for="exampleFormControlInput1" class="form-label"
+              >room</label
+            >
+            <input
+              type="text"
+              class="form-control"
+              placeholder="room"
+              name="room"
+            />
+            <button type="submit" class="btn btn-primary mt-3">Login</button>
         </div>
       </div>
-    </div>
+     
+    </form>
 
     <!-- servidor de sockets -->
     <script src="./socket.io/socket.io.js"></script>
@@ -42,7 +53,6 @@
       integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4"
       crossorigin="anonymous"
     ></script>
-
     <script src="./js/sockets-client.js"></script>
   </body>
 </html>
