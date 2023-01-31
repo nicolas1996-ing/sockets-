@@ -58,8 +58,9 @@ const socketController = (client) => {
     /* solo notifica a los usuario conectados en una misma sala */
     client.broadcast.to(user.room).emit("ev2-sc-new-users-connected", {
       from: "Admin",
-      message: "users connected in room",
+      message: `user ${user.name} is connected in room`,
       users: users.getPersonsByRoom(user.room),
+      date: new Date(),
     });
   });
 
@@ -70,6 +71,7 @@ const socketController = (client) => {
     /* emitir eventos hacia el cliente forma1. */
     /* emitir eventos hacia todos los clientes exceptuando el cliente que lo envió ... */
     /* this.io.emit(...) : cuando se usa dentro de la clase */
+    console.log(payload);
     client.broadcast.to(payload.from.room).emit("ev1-from-server-send-msm", {
       message: "msm grupal enviado - rta del servidor",
       broadcast: true,

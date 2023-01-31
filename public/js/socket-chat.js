@@ -1,19 +1,11 @@
 /* comunicación con el servidor */
-// console.log("hello world");
-
-/* referencias elementos html */
-const labelOn = document.getElementById("lbl-online");
-const labelOff = document.querySelector("#lbl-offline");
-const btnSendMsm = document.querySelector("#btnSendMsm");
-const inputMsm = document.querySelector("#inputTxtMsm");
-const inputMsmTo = document.querySelector("#inputMsmTo");
-const alertMsm = document.querySelector("#incorrectUserIdAlert");
 
 /* conectarse al socket.io */
 const socketClient = io();
 
 /* usuario activos en la sala */
 let usersInRoom = [];
+let msmRoom = [];
 
 /* leer params de la ruta */
 const params = new URLSearchParams(window.location.search);
@@ -39,6 +31,7 @@ socketClient.on("connect", () => {
   socketClient.emit("ev2-cs-enter-the-chat", user, (resp) => {
     console.log(resp);
     usersInRoom = resp;
+    renderUsers(resp, user.room);
   });
 });
 
@@ -54,24 +47,45 @@ socketClient.on("disconnect", () => {
 socketClient.on("ev2-sc-new-users-connected", (notification) => {
   console.log(notification.message);
   usersInRoom = notification.users;
+  console.log("user left....", notification);
+
+  const msm = {
+    from: notification.from,
+    date: notification.date,
+    content: notification.message,
+  };
+
+  addNewGroupMsm(msm.from, msm.date, msm.content, true);
+  renderUsers(notification.users, user.room);
 });
 
 /* escuchar eventos desde el servidor=>cliente */
 socketClient.on("ev1-from-server-send-msm", (payload) => {
-  console.log(payload);
+  console.log("msm room: ", payload);
+  const msm = {
+    from: payload.payload.from.name,
+    date: payload.payload.date,
+    content: payload.payload.payload,
+  };
+  addNewGroupMsm(msm.from, msm.date, msm.content);
 });
 
 socketClient.on("msm-private", (payload) => {
   console.log("has been received a private msm: ", payload);
 });
 
-/* eventos html */
-btnSendMsm.addEventListener("click", () => {
-  /* verificar si es un msm grupal o privado */
-  const addressee = inputMsmTo.value; // destinatario
-  console.log("users that send msm: ", addressee);
-  const isPrivateMsm = addressee ? verifyMsmType(addressee) : false;
-  const msm = inputMsm.value;
+/* formulario envio de msm */
+formSendMsm.addEventListener("submit", (ev) => {
+  ev.preventDefault(); // evita refresh de la pág
+  const msm = inputMsm?.value;
+  if (msm?.trim() === "") {
+    return;
+  }
+
+  // const addressee = inputMsmTo.value; // destinatario
+  // const isPrivateMsm = addressee ? verifyMsmType(addressee) : false;
+  const addressee = null;
+  const isPrivateMsm = false;
 
   const payload = {
     success: true,
@@ -81,27 +95,30 @@ btnSendMsm.addEventListener("click", () => {
     from: user,
   };
 
+  addNewGroupMsm(user.name, new Date(), msm);
+
   if (addressee) {
     if (isPrivateMsm) {
       // mensajes privados ...
       socketClient.emit("ev3-cs-msm-private", payload);
-      alertMsm.style.display = "none";
+      //alertMsm.style.display = "none";
       inputMsmTo.value = "";
       inputMsm.value = "";
     } else {
       console.log(isPrivateMsm);
-      alertMsm.style.display = "";
+      //alertMsm.style.display = "";
     }
   } else {
     /* emitir eventos hacia el socket - cliente=>servidor */
     console.log("se envio un msm hacia el servidor ...");
-    alertMsm.style.display = "none";
+    //alertMsm.style.display = "none";
     inputMsm.value = "";
     socketClient.emit("ev1-from-client-send-msm", payload, (socketResponse) => {
       console.log("socket response: ", socketResponse);
     });
-    inputMsmTo.value = "";
+    // inputMsmTo.value = "";
     inputMsm.value = "";
+    inputMsm.focus();
   }
 });
 
@@ -110,3 +127,50 @@ function verifyMsmType(addressee) {
   console.log("users that send msm: ", addressee);
   return usersInRoom.map((u) => u.id).includes(addressee);
 }
+
+function addNewGroupMsm(from, date, content, isInfoAboutConnection = false) {
+  msmRoom.push({ from, date, content });
+  console.log(msmRoom);
+  renderGroupalMsm(msmRoom, isInfoAboutConnection);
+}
+
+function renderGroupalMsm(msms = [], isInfoAboutConnection) {
+  // console.log(msms);
+
+  const html = msms.map(
+    (msm) =>
+      `
+     <li class=${msm.from === user.name ? "reverse" : ""}>
+
+      ${
+        msm.from !== user.name && !isInfoAboutConnection
+          ? `<div class="chat-img">
+            <img src="assets/images/users/1.jpg" alt="user" />
+          </div>`
+          : ""
+      }
+
+      <div class="chat-content">
+        <h5>${msm.from}</h5>
+        <div class=${
+          msm.from !== user.name ? `bg-light-info` : "bg-light-inverse"
+        }>
+         ${msm.content}
+        </div>
+      </div>
+
+      ${
+        msm.from === user.name && !isInfoAboutConnection
+          ? ` <div class="chat-img">
+            <img src="assets/images/users/1.jpg" alt="user" />
+          </div>`
+          : ""
+      }
+      <div class="chat-time">${new Date(msm.date).toLocaleTimeString()}</div>
+    </li>
+   `
+  );
+  boxMsmGroupal.innerHTML = html;
+}
+
+
